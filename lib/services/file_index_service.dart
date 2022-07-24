@@ -47,6 +47,7 @@ class FileIndexService {
   }
 
   void processStdout(String l) {
+    log('parsong: ');
     List<String> lines = l.split('\n');
     for (String line in lines) {
       List<String> sline = line.split('\t');

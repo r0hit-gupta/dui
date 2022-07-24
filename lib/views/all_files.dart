@@ -12,6 +12,8 @@ import '../services/sql.dart';
 import '../widgets/breadcrumbs.dart';
 import '../widgets/sunburst.dart';
 
+enum DbType { sql, nosql }
+
 class AllFiles extends ConsumerStatefulWidget {
   const AllFiles({Key? key}) : super(key: key);
   static const c = Color(0xfff9fafc);
@@ -33,7 +35,11 @@ class _DashboardViewState extends ConsumerState<AllFiles>
   final List<Node> nodes = [];
   final List<Node> curentNodes = [];
 
-  String currentPath = "/Users/rohit/Documents";
+  // Default DbType is sql.
+  DbType dbType = DbType.sql;
+  bool isSql = true;
+
+  String currentPath = "/Users/piyushmehta/Downloads/";
 
   void _index() async {
     await ref.read(FileIndexService.provider).index(currentPath);
@@ -111,9 +117,36 @@ class _DashboardViewState extends ConsumerState<AllFiles>
             child: Column(
               children: [
                 Container(
-                  color: AllFiles.c,
-                  height: 40,
-                ),
+                    color: AllFiles.c,
+                    height: 40,
+                    child: Padding(
+                      padding: const EdgeInsets.all(5.0),
+                      child: Align(
+                        alignment: Alignment.topRight,
+                        child: Row(
+                          children: [
+                            Text(
+                              dbType == DbType.sql ? "SQL" : "NoSQL",
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                            Switch(
+                              value: isSql,
+                              onChanged: (value) {
+                                setState(() {
+                                  isSql = value;
+                                  dbType = value ? DbType.sql : DbType.nosql;
+                                });
+
+                                print(value);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    )),
                 const Divider(),
                 Expanded(
                   child: Container(
