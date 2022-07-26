@@ -54,10 +54,10 @@ class _DashboardViewState extends ConsumerState<VideosList>
     items = await Future.wait(nodes.map((n) async {
       final children = await ref.read(SQLService.provider).getFiles(n.fullPath);
       return Item(
-        n.fullName,
-        n.size.toDouble() / totalSize,
-        children.toItems(),
-      );
+          name: n.fullName,
+          size: n.size.toDouble() / totalSize,
+          children: children.toItems(),
+          color: getRandomColor());
     }).toList());
     _controller.forward(from: 0.0);
   }
@@ -83,6 +83,7 @@ class _DashboardViewState extends ConsumerState<VideosList>
   @override
   void initState() {
     super.initState();
+    _index();
     animate();
   }
 
@@ -100,11 +101,6 @@ class _DashboardViewState extends ConsumerState<VideosList>
           Expanded(
             child: Column(
               children: [
-                Container(
-                  color: VideosList.c,
-                  height: 40,
-                ),
-                const Divider(),
                 Expanded(
                   child: Container(
                     margin:
@@ -130,7 +126,7 @@ class _DashboardViewState extends ConsumerState<VideosList>
                         Container(
                           margin: const EdgeInsets.symmetric(
                               vertical: 8, horizontal: 16),
-                          child: Text('All Videos'),
+                          child: const Text('All Videos'),
                         ),
                         const Divider(),
                         Expanded(

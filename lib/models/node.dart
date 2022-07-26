@@ -52,9 +52,14 @@ class Item {
   final String name;
   final double size;
   final List<Item> children;
-  final color = getRandomColor();
+  final Color color;
 
-  Item(this.name, this.size, [this.children = const []]);
+  Item({
+    required this.name,
+    required this.size,
+    required this.color,
+    this.children = const [],
+  });
 
   // Color get color => getRandomColor();
 }
@@ -62,13 +67,13 @@ class Item {
 // function to return random solid color
 Color getRandomColor() {
   return Color(
-    0xFF000000 | (Random().nextInt(0xDDDDDD) << 8) | Random().nextInt(0xDDDDDD),
+    0xFF222222 | (Random().nextInt(0xDDDDDD) << 8) | Random().nextInt(0xDDDDDD),
   );
 }
 
-extension Helpers on List<Node> {
+extension Helpers on Iterable<Node> {
   List<Node> sortBySizeDesc() {
-    return this..sort((a, b) => b.size.compareTo(a.size));
+    return toList()..sort((a, b) => b.size.compareTo(a.size));
   }
 
   int get totalSize {
@@ -82,131 +87,9 @@ extension Helpers on List<Node> {
   // convert to Item
   List<Item> toItems() {
     return map((n) => Item(
-          n.fullName,
-          n.size / totalSize,
+          name: n.fullName,
+          size: n.size / totalSize,
+          color: getRandomColor(),
         )).toList();
   }
 }
-
-// returns fake item data with sizes that add up to 1
-final data = [
-  Item(
-    "root",
-    0.8,
-    [
-      Item(
-        "A",
-        0.3,
-        [
-          Item(
-            "A1",
-            0.2,
-            [
-              Item(
-                "A",
-                0.3,
-                [
-                  Item("A1", 0.2),
-                  Item(
-                    "A2",
-                    0.8,
-                  ),
-                ],
-              ),
-              Item(
-                "B",
-                0.7,
-                [
-                  Item("B1", 0.4),
-                  Item("B2", 0.6),
-                ],
-              ),
-            ],
-          ),
-          Item("A2", 0.8),
-        ],
-      ),
-      Item(
-        "B",
-        0.7,
-        [
-          Item("B1", 0.4),
-          Item(
-            "B2",
-            0.6,
-            [
-              Item(
-                "A",
-                0.3,
-                [
-                  Item("A1", 0.2),
-                  Item("A2", 0.8),
-                ],
-              ),
-              Item(
-                "B",
-                0.7,
-                [
-                  Item("B1", 0.4),
-                  Item("B2", 0.6),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    ],
-  ),
-  Item(
-    "test",
-    0.2,
-    [
-      Item("A", 0.1),
-      Item("A", 0.1),
-      Item("A", 0.2),
-      Item(
-        "B",
-        0.6,
-        [
-          Item(
-            "A",
-            0.3,
-            [
-              Item("A1", 0.2),
-              Item(
-                "A2",
-                0.8,
-                [
-                  Item(
-                    "A",
-                    0.3,
-                    [
-                      Item("A1", 0.2),
-                      Item("A2", 0.8),
-                    ],
-                  ),
-                  Item(
-                    "B",
-                    0.7,
-                    [
-                      Item("B1", 0.4),
-                      Item("B2", 0.6),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-          Item(
-            "B",
-            0.7,
-            [
-              Item("B1", 0.4),
-              Item("B2", 0.6),
-            ],
-          ),
-        ],
-      ),
-    ],
-  )
-];

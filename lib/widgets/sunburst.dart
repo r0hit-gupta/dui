@@ -25,19 +25,15 @@ class SunburstPainter extends CustomPainter {
   final double intialAngle;
   SunburstPainter({required this.intialAngle, required this.data});
 
-  Paint get p => Paint()
-    ..color = getRandomColor()
-    ..strokeWidth = 20
-    ..style = PaintingStyle.stroke;
-
-  double startAngle = 0;
   int level = -1;
+  final double strokeWidth = 25;
+  final double miniStrokeWidth = 10;
 
   double get radius {
     if (level >= 3) {
-      return (23 * 2) + ((level - 2) * 13) + 5;
+      return (strokeWidth * 2) + ((level - 2) * 11) + 10;
     }
-    return 23.0 * level;
+    return (strokeWidth + 1) * level;
   }
 
   @override
@@ -53,11 +49,11 @@ class SunburstPainter extends CustomPainter {
       items.forEach((item) {
         Paint p = Paint()
           ..color = item.color
-          ..strokeWidth = level >= 3 ? 10 : 20
+          ..strokeWidth = level >= 3 ? miniStrokeWidth : strokeWidth
           ..style = PaintingStyle.stroke;
         double sweepAng = item.size * maxSweepAngle;
-        drawArc(sweepAng, canvas, size, startAng, maxSweepAngle, p,
-            80.0 + (level > 0 ? radius : 0));
+        drawArc(sweepAng - 0.01, canvas, size, startAng, maxSweepAngle, p,
+            60.0 + (level > 0 ? radius : 0));
         dd(items: item.children, maxSweepAngle: sweepAng, startAngle: startAng);
         startAng += sweepAng;
       });

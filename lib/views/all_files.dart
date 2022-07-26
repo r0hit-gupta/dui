@@ -33,12 +33,9 @@ class _DashboardViewState extends ConsumerState<AllFiles>
   final List<Node> nodes = [];
   final List<Node> curentNodes = [];
 
-  String currentPath = "/Users/rohit/Documents";
+  String get basePath => ref.read(FileIndexService.provider).basePath ?? '';
 
-  void _index() async {
-    await ref.read(FileIndexService.provider).index(currentPath);
-    _getNodes(currentPath);
-  }
+  late String currentPath = basePath;
 
   // sum of all the nodes sizes
   int get totalSize => nodes.fold(0, (sum, node) => sum + node.size);
@@ -47,29 +44,45 @@ class _DashboardViewState extends ConsumerState<AllFiles>
 
   // Get the nodes from the database
   void _getNodes(String path) async {
-    final res = await ref.read(SQLService.provider).getFiles(path);
+    final res = await ref.read(SQLService.provider).getFiles(path, depth: 6);
     currentPath = path;
     nodes.clear();
     nodes.addAll(res);
 
     curentNodes.clear();
     curentNodes.addAll(res.where((n) => n.parentPath == path));
-    curentNodes.sortBySizeDesc();
+    curentNodes.sort((a, b) => b.size.compareTo(a.size));
 
     items = getChildren(currentPath);
     setState(() {});
     _controller.forward(from: 0.0);
   }
 
-  List<Item> getChildren(String path) {
+  List<Item> getChildren(String path, [Color? nodeColor]) {
+    final Color color =
+        (nodeColor ?? getRandomColor()).hue(Random().nextInt(20));
     final baseNodes = nodes.where((n) => n.parentPath == path).toList();
-    return baseNodes.map((n) {
-      return Item(
-        n.fullName,
-        n.size.toDouble() / baseNodes.totalSize,
-        getChildren(n.fullPath),
-      );
-    }).toList();
+    List<Item> bigNodes = [];
+    bool hasSmallItem = false;
+    baseNodes.forEach((n) {
+      final ratio = n.size.toDouble() / baseNodes.totalSize;
+      if (ratio > 0.03) {
+        bigNodes.add(Item(
+          name: n.fullName,
+          size: n.size.toDouble() / baseNodes.totalSize,
+          children: getChildren(n.fullPath, color),
+          color: color,
+        ));
+      } else if (!hasSmallItem) {
+        bigNodes.add(Item(
+          name: n.fullName,
+          size: 0.05,
+          color: Colors.grey.shade300,
+        ));
+        hasSmallItem = true;
+      }
+    });
+    return bigNodes;
   }
 
   // init animation
@@ -99,22 +112,17 @@ class _DashboardViewState extends ConsumerState<AllFiles>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _index(),
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () => _index(),
+      //   tooltip: 'Increment',
+      //   child: const Icon(Icons.add),
+      // ),
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
             child: Column(
               children: [
-                Container(
-                  color: AllFiles.c,
-                  height: 40,
-                ),
-                const Divider(),
                 Expanded(
                   child: Container(
                     margin:
@@ -175,10 +183,10 @@ class _DashboardViewState extends ConsumerState<AllFiles>
                                       children: [
                                         Align(
                                           child: Text(
-                                            nodes.formattedSize,
+                                            curentNodes.formattedSize,
                                             style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 20,
+                                              // fontWeight: FontWeight.bold,
+                                              fontSize: 18,
                                             ),
                                           ),
                                         ),

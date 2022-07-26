@@ -19,4 +19,13 @@ extension ColorBrightness on Color {
 
     return hslLight.toColor();
   }
+
+  Color hue([int amount = 1]) {
+    // assert(amount >= 0 && amount <= 1);
+
+    final hsl = HSLColor.fromColor(this);
+    final hslLight = hsl.withHue((hsl.hue + amount).clamp(0.0, 360.0));
+
+    return hslLight.toColor();
+  }
 }
