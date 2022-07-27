@@ -1,14 +1,17 @@
+import 'dart:io';
 import 'dart:math' hide log;
 
 import 'package:dui/extensions/color.dart';
 import 'package:dui/services/file_index_service.dart';
+import 'package:dui/services/sql.dart';
 import 'package:dui/widgets/list_pane.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:path/path.dart' as p;
 
 import '../models/node.dart';
-import '../services/sql.dart';
+
+import '../services/no_sql.dart';
 import '../widgets/breadcrumbs.dart';
 import '../widgets/sunburst.dart';
 
@@ -44,7 +47,7 @@ class _DashboardViewState extends ConsumerState<AllFiles>
 
   // Get the nodes from the database
   void _getNodes(String path) async {
-    final res = await ref.read(SQLService.provider).getFiles(path, depth: 6);
+    final res = await ref.read(NoSQLService.provider).getFiles(path, depth: 6);
     currentPath = path;
     nodes.clear();
     nodes.addAll(res);
@@ -111,12 +114,10 @@ class _DashboardViewState extends ConsumerState<AllFiles>
 
   @override
   Widget build(BuildContext context) {
+    final searchNodes = ref.watch(NoSQLService.provider).searchResults;
+    final isSearching = searchNodes != null;
+
     return Scaffold(
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () => _index(),
-      //   tooltip: 'Increment',
-      //   child: const Icon(Icons.add),
-      // ),
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -144,16 +145,19 @@ class _DashboardViewState extends ConsumerState<AllFiles>
                       ],
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
                           margin: const EdgeInsets.symmetric(
                               vertical: 8, horizontal: 16),
-                          child: Breadcrumbs(
-                            crumbs: p.split(currentPath),
-                            onCrumbTap: (path) {
-                              _getNodes(path);
-                            },
-                          ),
+                          child: isSearching
+                              ? const Text('Search Results')
+                              : Breadcrumbs(
+                                  crumbs: p.split(currentPath),
+                                  onCrumbTap: (path) {
+                                    _getNodes(path);
+                                  },
+                                ),
                         ),
                         const Divider(),
                         Expanded(
@@ -164,7 +168,9 @@ class _DashboardViewState extends ConsumerState<AllFiles>
                                   children: [
                                     Expanded(
                                       child: ListPane(
-                                        nodes: curentNodes,
+                                        nodes: isSearching
+                                            ? searchNodes
+                                            : curentNodes,
                                         onDoubleTap: (node) {
                                           if (node.isDirectory) {
                                             _getNodes(node.fullPath);
@@ -176,31 +182,32 @@ class _DashboardViewState extends ConsumerState<AllFiles>
                                 ),
                               ),
                               const VerticalDivider(),
-                              Expanded(
-                                child: Column(children: [
-                                  Expanded(
-                                    child: Stack(
-                                      children: [
-                                        Align(
-                                          child: Text(
-                                            curentNodes.formattedSize,
-                                            style: const TextStyle(
-                                              // fontWeight: FontWeight.bold,
-                                              fontSize: 18,
+                              if (!isSearching)
+                                Expanded(
+                                  child: Column(children: [
+                                    Expanded(
+                                      child: Stack(
+                                        children: [
+                                          Align(
+                                            child: Text(
+                                              curentNodes.formattedSize,
+                                              style: const TextStyle(
+                                                // fontWeight: FontWeight.bold,
+                                                fontSize: 18,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        Positioned.fill(
-                                          child: SunburstChart(
-                                            items: items,
-                                            animation: animation,
+                                          Positioned.fill(
+                                            child: SunburstChart(
+                                              items: items,
+                                              animation: animation,
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ]),
-                              ),
+                                  ]),
+                                ),
                             ],
                           ),
                         ),

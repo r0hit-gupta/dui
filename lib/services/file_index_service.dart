@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../models/node.dart';
-import 'sql.dart';
+import 'no_sql.dart';
 
 class FileIndexService extends ChangeNotifier {
   final Reader read;
@@ -43,7 +43,7 @@ class FileIndexService extends ChangeNotifier {
     isScanning = true;
 
     clear();
-    await read(SQLService.provider).init();
+    await read(NoSQLService.provider).init();
     final start = DateTime.now();
     final p = await Process.start(
       '/bin/sh',
@@ -57,7 +57,7 @@ class FileIndexService extends ChangeNotifier {
       final end = DateTime.now();
       log('time taken: ${end.difference(start).inMilliseconds}');
       log('Total Nodes = ${parsedNodes.length}');
-      await read(SQLService.provider).save(parsedNodes);
+      await read(NoSQLService.provider).save(parsedNodes);
       log('Saved');
       isScanning = false;
     });
@@ -65,7 +65,7 @@ class FileIndexService extends ChangeNotifier {
 
   Future<void> clear() async {
     parsedNodes.clear();
-    await read(SQLService.provider).clear();
+    await read(NoSQLService.provider).clear();
   }
 
   void processStdout(String l) {

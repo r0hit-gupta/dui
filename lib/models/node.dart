@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -23,12 +25,37 @@ class Node {
 
   String get fullName => name + (ext ?? '');
 
+  bool? verifyDirectory;
+
   bool get isDirectory => ext == null || fullPath.endsWith('/') || ext!.isEmpty;
 
   String get formattedSize => getFormattedSize(size);
 
   @override
-  String toString() => fullPath;
+  String toString() => fullPath + ' (${size} bytes)' + modifiedDate.toString();
+
+  DateTime? modifiedDate;
+
+  // Future getModifiedDate() async {
+  //   print("Getting modified date for $fullPath");
+  //   await Directory.fromUri(Uri.parse(fullPath)).stat().then((stat) {
+  //     verifyDirectory = stat.type == FileSystemEntityType.directory;
+  //     modifiedDate = stat.modified;
+  //   }).catchError((e) {
+  //     isExist = false;
+  //   });
+  // }
+
+  // Directory get directory => Directory.fromUri(Uri.parse(fullPath));
+
+  bool? isExist;
+  // Future<bool> exists() async {
+  //   return await directory.exists();
+  // }
+
+  // hashcode
+  @override
+  int get hashCode => fullPath.hashCode;
 
   Node({
     required this.size,
@@ -37,6 +64,11 @@ class Node {
         name = p.basenameWithoutExtension(fullPath),
         depth = fullPath.split('/').length,
         ext = p.extension(fullPath);
+
+  @override
+  bool operator ==(Object other) {
+    return other is Node && fullPath == other.fullPath;
+  }
 }
 
 String getFormattedSize(int size) {
@@ -91,5 +123,17 @@ extension Helpers on Iterable<Node> {
           size: n.size / totalSize,
           color: getRandomColor(),
         )).toList();
+  }
+}
+
+class Debouncer {
+  final int milliseconds;
+  Timer? _timer;
+
+  Debouncer({required this.milliseconds});
+
+  run(VoidCallback action) {
+    _timer?.cancel();
+    _timer = Timer(Duration(milliseconds: milliseconds), action);
   }
 }

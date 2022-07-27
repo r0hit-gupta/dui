@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:dui/extensions/color.dart';
 import 'package:dui/services/file_index_service.dart';
+import 'package:dui/services/no_sql.dart';
+import 'package:dui/views/images_list.dart';
 import 'package:dui/views/videos_list.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -10,6 +12,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lottie/lottie.dart';
 
 import '../colors.dart';
+import '../models/node.dart';
 import '../widgets/sidebar.dart';
 import 'all_files.dart';
 
@@ -35,15 +38,15 @@ class _DashboardViewState extends ConsumerState<DashboardView>
     });
   }
 
-  bool isSql = true;
+  final _debouncer = Debouncer(milliseconds: 300);
 
-  // final scan = StateNotifierProvider(FileIndexService.provider).scan;
   @override
   Widget build(BuildContext context) {
     final isScanning = ref.watch(FileIndexService.provider).isScanning;
+
     final hasIndexed =
         ref.watch(FileIndexService.provider).hasBasePath && !isScanning;
-    print('aaya ${isScanning}');
+
     return Scaffold(
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -63,10 +66,15 @@ class _DashboardViewState extends ConsumerState<DashboardView>
                 width: double.infinity,
                 child: Row(
                   children: [
-                    const Flexible(
+                    Flexible(
                       flex: 3,
                       child: TextField(
-                        decoration: InputDecoration(
+                        onChanged: (val) {
+                          _debouncer.run(() {
+                            ref.read(NoSQLService.provider).search(val);
+                          });
+                        },
+                        decoration: const InputDecoration(
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.all(6),
                           prefixIcon: Icon(Icons.search),
@@ -81,9 +89,9 @@ class _DashboardViewState extends ConsumerState<DashboardView>
                       flex: 1,
                     ),
                     GestureDetector(
-                      onTap: () => setState(() {
-                        isSql = !isSql;
-                      }),
+                      onTap: () {
+                        ref.read(NoSQLService.provider).changeDatabase();
+                      },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 600),
                         curve: Curves.easeInOutCubic,
@@ -105,43 +113,52 @@ class _DashboardViewState extends ConsumerState<DashboardView>
                             ),
                           ],
                         ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.swap_horiz,
-                              size: 20,
-                              color: Colors.black54,
-                            ),
-                            const SizedBox(
-                              width: 8,
-                            ),
-                            Text(
-                              isSql ? "SQL" : "NoSQL",
-                              style: const TextStyle(
-                                color: Colors.black54,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: Colors.green,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              "122 ms",
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.black54,
-                                // fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        child: Consumer(
+                          builder: (_, ref, __) {
+                            final isSql =
+                                !ref.watch(NoSQLService.provider).isNoSql;
+                            final duration =
+                                ref.watch(NoSQLService.provider).timeTaken;
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.swap_horiz,
+                                  size: 20,
+                                  color: Colors.black54,
+                                ),
+                                const SizedBox(
+                                  width: 8,
+                                ),
+                                Text(
+                                  isSql ? "SQL" : "NoSQL",
+                                  style: const TextStyle(
+                                    color: Colors.black54,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                                if (duration != null) ...[
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "${duration.inMilliseconds} ms",
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ]
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ),
@@ -220,7 +237,9 @@ class _DashboardViewState extends ConsumerState<DashboardView>
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      '${isScanning ? "" : "BEGIN "}SCANNING',
+                                      !isScanning
+                                          ? "SELECT FOLDER"
+                                          : "SCANNING",
                                       style: const TextStyle(
                                         color: Color(0xff098ff1),
                                         fontWeight: FontWeight.bold,
@@ -245,6 +264,7 @@ class _DashboardViewState extends ConsumerState<DashboardView>
                         children: const [
                           AllFiles(),
                           VideosList(),
+                          ImagesList(),
                         ],
                       ),
               ),

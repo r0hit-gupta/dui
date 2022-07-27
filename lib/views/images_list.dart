@@ -8,25 +8,20 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../models/node.dart';
 import '../services/no_sql.dart';
 
-import '../widgets/sunburst.dart';
-
-class VideosList extends ConsumerStatefulWidget {
-  const VideosList({Key? key}) : super(key: key);
+class ImagesList extends ConsumerStatefulWidget {
+  const ImagesList({Key? key}) : super(key: key);
   static const c = Color(0xfff9fafc);
   static const b = Color(0xff00c2ff);
 
   @override
-  ConsumerState<VideosList> createState() => _DashboardViewState();
+  ConsumerState<ImagesList> createState() => _DashboardViewState();
 }
 
-class _DashboardViewState extends ConsumerState<VideosList> {
-  late Animation<double> animation;
-
+class _DashboardViewState extends ConsumerState<ImagesList> {
   final List<Node> nodes = [];
 
   void _index() async {
-    final vids = await ref.read(NoSQLService.provider).getVideos();
-    // print(vids.length);
+    final vids = await ref.read(NoSQLService.provider).getImages();
     nodes.clear();
     nodes.addAll(vids);
     setState(() {});
@@ -61,12 +56,12 @@ class _DashboardViewState extends ConsumerState<VideosList> {
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
-                          color: VideosList.c.darken().withOpacity(0.1),
+                          color: ImagesList.c.darken().withOpacity(0.1),
                           blurRadius: 12,
                           offset: const Offset(0, 8),
                         ),
                         BoxShadow(
-                          color: VideosList.c.darken().withOpacity(0.3),
+                          color: ImagesList.c.darken().withOpacity(0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 2),
                         ),
@@ -80,7 +75,7 @@ class _DashboardViewState extends ConsumerState<VideosList> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Top 100 Videos'),
+                              const Text('Top 100 Images'),
                               GestureDetector(
                                 onTap: _index,
                                 child: Icon(Icons.refresh,

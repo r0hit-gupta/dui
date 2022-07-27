@@ -4,11 +4,14 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:dui/colors.dart';
 import 'package:dui/extensions/build_context_ext.dart';
 import 'package:dui/extensions/color.dart';
+import 'package:dui/services/no_sql.dart';
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:lottie/lottie.dart';
 
 import '../models/node.dart';
 
-class Sidebar extends StatefulWidget {
+class Sidebar extends ConsumerStatefulWidget {
   const Sidebar({
     Key? key,
     required this.currentIndex,
@@ -19,19 +22,27 @@ class Sidebar extends StatefulWidget {
   final Function(int) onChange;
 
   @override
-  State<Sidebar> createState() => _SidebarState();
+  ConsumerState<Sidebar> createState() => _SidebarState();
 }
 
-class _SidebarState extends State<Sidebar> {
-  final Set<Node> nodesToDelete = {};
+class _SidebarState extends ConsumerState<Sidebar>
+    with TickerProviderStateMixin {
+  Set<Node> nodesToDelete = {};
 
   int get numOfFolders =>
       nodesToDelete.where((node) => node.isDirectory).length;
   int get numOfFiles => nodesToDelete.where((node) => !node.isDirectory).length;
   bool isHover = false;
 
+  bool isDeleting = false;
+
+  late final _animationController = AnimationController(
+    vsync: this,
+  );
+
   @override
   Widget build(BuildContext context) {
+    nodesToDelete = ref.watch(NoSQLService.provider).nodesToDelete;
     return Stack(
       children: [
         Container(
@@ -64,14 +75,14 @@ class _SidebarState extends State<Sidebar> {
               onTap: () => widget.onChange(0),
             ),
             OptionLink(
-              icon: Icons.video_collection,
+              icon: Icons.video_collection_outlined,
               title: 'Videos',
               isActive: widget.currentIndex == 1,
               onTap: () => widget.onChange(1),
             ),
             OptionLink(
-              icon: Icons.insert_drive_file_outlined,
-              title: 'Files',
+              icon: Icons.image_outlined,
+              title: 'Images',
               isActive: widget.currentIndex == 2,
               onTap: () => widget.onChange(2),
             ),
@@ -91,6 +102,18 @@ class _SidebarState extends State<Sidebar> {
               width: 500,
               height: 300,
             ),
+          ),
+        ),
+        Positioned(
+          bottom: -50,
+          left: 0,
+          right: 0,
+          child: Lottie.asset(
+            'assets/lottie/confetti.json',
+            controller: _animationController,
+            onLoaded: (composition) {
+              _animationController.duration = composition.duration;
+            },
           ),
         ),
         Positioned(
@@ -122,27 +145,52 @@ class _SidebarState extends State<Sidebar> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 16,
-                            ),
-                            decoration: BoxDecoration(
-                              color: KColors.accent.lighten(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Text(
-                                  'CLEAN NOW',
-                                  style: TextStyle(
-                                    color: Color(0xff098ff1),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            )),
+                        GestureDetector(
+                          onTap: () async {
+                            setState(() {
+                              isDeleting = true;
+                            });
+                            await ref
+                                .read(NoSQLService.provider)
+                                .delete(nodesToDelete);
+
+                            setState(() {
+                              isDeleting = false;
+                            });
+                            _animationController.forward(from: 0);
+                          },
+                          child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                color: KColors.accent.lighten(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  isDeleting
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(),
+                                        )
+                                      : const Expanded(
+                                          child: Text(
+                                            'CLEAN NOW',
+                                            style: TextStyle(
+                                              color: Color(0xff098ff1),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                ],
+                              )),
+                        ),
                       ] else
                         Center(
                           child: DottedBorder(
@@ -185,9 +233,9 @@ class _SidebarState extends State<Sidebar> {
                 });
               },
               onAccept: (item) {
-                nodesToDelete.add(item);
+                ref.read(NoSQLService.provider).addNodeToDelete(item);
                 isHover = false;
-                setState(() {});
+                // setState(() {});
               },
             )),
       ],
